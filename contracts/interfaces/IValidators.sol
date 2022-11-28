@@ -33,6 +33,11 @@ interface IValidators {
 
     function isValidator(address) external view returns (bool);
 
+    function getTopValidators(uint256 n)
+    external
+    view
+    returns (address[] memory);
 
+   function validatorLockedGoldRequirements() external view returns(uint256,uint256);
 
 }

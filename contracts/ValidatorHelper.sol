@@ -428,18 +428,14 @@ contract ValidatorHelper is ReentrancyGuard {
         address payable reveiver,
         bool isSponsor
     ) public nonReentrant returns (bool) {
-        uint256 amount;
-
+       
         if (isSponsor) {
             require(manager.isAdmin(msg.sender), "deny");
             require(
-                getBalance() >= sponsorAmount && sponsorAmount > 0,
+                getBalance() >= value && sponsorAmount >= value,
                 "balance unenoungh"
             );
-
-            amount = sponsorAmount;
-
-            sponsorAmount = 0;
+            sponsorAmount -= value;
         } else {
             require(
                 manager.getHelperAdmin(address(this)) == msg.sender,
@@ -453,10 +449,9 @@ contract ValidatorHelper is ReentrancyGuard {
                 "too many"
             );
 
-            amount = value;
         }
 
-        reveiver.transfer(amount);
+        reveiver.transfer(value);
 
         return true;
     }

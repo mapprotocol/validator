@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber, Signature } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
@@ -129,7 +129,7 @@ task("createAccount",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.createAccount(taskArgs.name)).wait();
+        let result = await (await helper.createAccount(taskArgs.name,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -152,7 +152,7 @@ task("setName",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.setName(taskArgs.name)).wait();
+        let result = await (await helper.setName(taskArgs.name,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -175,7 +175,7 @@ task("setMetadataURL",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.setMetadataURL(taskArgs.uri)).wait();
+        let result = await (await helper.setMetadataURL(taskArgs.uri,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -191,17 +191,21 @@ task("authorizeValidatorSigner",
 )
     .addParam("helper", "helper address")
     .addParam("singer", "siger for helper")
-    .addParam('v', "v")
-    .addParam('r', 'r')
-    .addParam('s', 's')
+    .addParam('signature', "Signature")
     .setAction(async (taskArgs, HardhatRuntimeEnvironment) => {
         const { deployments, getNamedAccounts, ethers } = HardhatRuntimeEnvironment;
 
         let ValidatorHelper = await ethers.getContractFactory('ValidatorHelper');
 
+        let signature = ethers.utils.splitSignature(taskArgs.signature);
+
+        console.log("r == ", signature.r)
+        console.log("s == ", signature.s)
+        console.log("v == ", signature.v)
+
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.authorizeValidatorSigner(taskArgs.singer, taskArgs.v, taskArgs.r, taskArgs.s)).wait();
+        let result = await (await helper.authorizeValidatorSigner(taskArgs.singer, signature.v, signature.r, signature.s,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -248,7 +252,7 @@ task("lock",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).lock(ethers.utils.parseEther(taskArgs.amount))).wait();
+        let result = await (await helper.connect(deployer).lock(ethers.utils.parseEther(taskArgs.amount),{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -272,7 +276,7 @@ task("unlock",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).unlock(ethers.utils.parseEther(taskArgs.amount))).wait();
+        let result = await (await helper.connect(deployer).unlock(ethers.utils.parseEther(taskArgs.amount),{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -296,7 +300,7 @@ task("relock",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).relock(taskArgs.index, taskArgs.amount)).wait();
+        let result = await (await helper.connect(deployer).relock(taskArgs.index, taskArgs.amount,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -319,7 +323,7 @@ task("withdraw",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).withdraw(taskArgs.index)).wait();
+        let result = await (await helper.connect(deployer).withdraw(taskArgs.index,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -424,7 +428,7 @@ task("withrawOut",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).withrawOut(taskArgs.reveiver, taskArgs.amount)).wait();
+        let result = await (await helper.connect(deployer).withrawOut(taskArgs.reveiver, taskArgs.amount,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -461,7 +465,7 @@ task("registerValidator",
     .addParam("commission", "commission")
     .addParam("lesser", "lesser")
     .addParam("greater", "greater")
-    .addParam("keys", "keys")
+    .addVariadicPositionalParam("proof", "proof")
     .setAction(async (taskArgs, HardhatRuntimeEnvironment) => {
         const { deployments, getNamedAccounts, ethers } = HardhatRuntimeEnvironment;
         const { deployer } = await getNamedAccounts();
@@ -469,7 +473,17 @@ task("registerValidator",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).registerValidator(taskArgs.commission, taskArgs.lesser, taskArgs.greater, taskArgs.keys)).wait();
+        let s = ethers.utils.RLP.decode(taskArgs.proof);
+
+        if (s.length != 4) {
+            console.log("invalid proof");
+            return;
+        }
+        let proof = [s[1], s[2], s[3], '0x' + s[0].slice(4)];
+
+        console.log(proof)
+
+        let result = await (await helper.connect(deployer).registerValidator(taskArgs.commission, taskArgs.lesser, taskArgs.greater, proof,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -493,7 +507,7 @@ task("setNextCommissionUpdate",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).setNextCommissionUpdate(taskArgs.commission)).wait();
+        let result = await (await helper.connect(deployer).setNextCommissionUpdate(taskArgs.commission,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -514,7 +528,7 @@ task("updateCommission",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).updateCommission()).wait();
+        let result = await (await helper.connect(deployer).updateCommission({gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -600,7 +614,7 @@ task("voter",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).voter(taskArgs.validator, taskArgs.value, taskArgs.lesser, taskArgs.greater)).wait();
+        let result = await (await helper.connect(deployer).voter(taskArgs.validator, taskArgs.value, taskArgs.lesser, taskArgs.greater,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -628,7 +642,7 @@ task("revokePending",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).revokePending(taskArgs.validator, taskArgs.value, taskArgs.lesser, taskArgs.greater, taskArgs.index)).wait();
+        let result = await (await helper.connect(deployer).revokePending(taskArgs.validator, taskArgs.value, taskArgs.lesser, taskArgs.greater, taskArgs.index,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -656,7 +670,7 @@ task("revokeActive",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).revokeActive(taskArgs.validator, taskArgs.value, taskArgs.lesser, taskArgs.greater, taskArgs.index)).wait();
+        let result = await (await helper.connect(deployer).revokeActive(taskArgs.validator, taskArgs.value, taskArgs.lesser, taskArgs.greater, taskArgs.index,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -684,7 +698,7 @@ task("revokeAllActive",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).revokeAllActive(taskArgs.validator, taskArgs.lesser, taskArgs.greater, taskArgs.index)).wait();
+        let result = await (await helper.connect(deployer).revokeAllActive(taskArgs.validator, taskArgs.lesser, taskArgs.greater, taskArgs.index,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -704,9 +718,7 @@ task("setAccount",
     .addParam("name", "name")
     .addParam("dataEncryptionKey", "dataEncryptionKey")
     .addParam("walletAddress", "walletAddress")
-    .addParam("v", "v")
-    .addParam("r", "r")
-    .addParam("s", "s")
+    .addParam("signature", "signature")
     .setAction(async (taskArgs, HardhatRuntimeEnvironment) => {
         const { deployments, getNamedAccounts, ethers } = HardhatRuntimeEnvironment;
         const { deployer } = await getNamedAccounts();
@@ -714,7 +726,13 @@ task("setAccount",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).setAccount(taskArgs.name, taskArgs.dataEncryptionKey, taskArgs.walletAddress, taskArgs.v, taskArgs.r, taskArgs.s)).wait();
+        let signature = ethers.utils.splitSignature(taskArgs.signature);
+
+        console.log("r == ", signature.r)
+        console.log("s == ", signature.s)
+        console.log("v == ", signature.v)
+
+        let result = await (await helper.connect(deployer).setAccount(taskArgs.name, taskArgs.dataEncryptionKey, taskArgs.walletAddress, signature.v, signature.r, signature.s,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -732,9 +750,7 @@ task("authorizeSignerWithSignature",
     .addParam("helper", "helper address")
     .addParam("signer", "signer")
     .addParam("role", "role")
-    .addParam("v", "v")
-    .addParam("r", "r")
-    .addParam("s", "s")
+    .addParam("signature", "signature")
     .setAction(async (taskArgs, HardhatRuntimeEnvironment) => {
         const { deployments, getNamedAccounts, ethers } = HardhatRuntimeEnvironment;
         const { deployer } = await getNamedAccounts();
@@ -742,7 +758,13 @@ task("authorizeSignerWithSignature",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).authorizeSignerWithSignature(taskArgs.signer, taskArgs.role, taskArgs.v, taskArgs.r, taskArgs.s)).wait()
+        let signature = ethers.utils.splitSignature(taskArgs.signature);
+
+        console.log("r == ", signature.r)
+        console.log("s == ", signature.s)
+        console.log("v == ", signature.v)
+
+        let result = await (await helper.connect(deployer).authorizeSignerWithSignature(taskArgs.signer, taskArgs.role, signature.v, signature.r, signature.s,{gaslimit:7000000})).wait()
 
         if (result.status == 1) {
 
@@ -759,9 +781,7 @@ task("authorizeVoteSigner",
 )
     .addParam("helper", "helper address")
     .addParam("signer", "signer")
-    .addParam("v", "v")
-    .addParam("r", "r")
-    .addParam("s", "s")
+    .addParam("signature", "signature")
     .setAction(async (taskArgs, HardhatRuntimeEnvironment) => {
         const { deployments, getNamedAccounts, ethers } = HardhatRuntimeEnvironment;
         const { deployer } = await getNamedAccounts();
@@ -769,7 +789,13 @@ task("authorizeVoteSigner",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).authorizeVoteSigner(taskArgs.signer, taskArgs.v, taskArgs.r, taskArgs.s)).wait();
+        let signature = ethers.utils.splitSignature(taskArgs.signature);
+
+        console.log("r == ", signature.r)
+        console.log("s == ", signature.s)
+        console.log("v == ", signature.v)
+
+        let result = await (await helper.connect(deployer).authorizeVoteSigner(taskArgs.signer, signature.v, signature.r, signature.s,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -793,7 +819,7 @@ task("authorizeSigner",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).authorizeSigner(taskArgs.signer, taskArgs.role)).wait();
+        let result = await (await helper.connect(deployer).authorizeSigner(taskArgs.signer, taskArgs.role,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
@@ -818,7 +844,7 @@ task("removeSigner",
 
         let helper = ValidatorHelper.attach(taskArgs.helper);
 
-        let result = await (await helper.connect(deployer).removeSigner(taskArgs.signer, taskArgs.role)).wait();
+        let result = await (await helper.connect(deployer).removeSigner(taskArgs.signer, taskArgs.role,{gaslimit:7000000})).wait();
 
         if (result.status == 1) {
 
