@@ -29,7 +29,7 @@ contract HelperManager is Ownable {
     {
         require(_newAdmin != address(0), "helperAdmin not be zero address");
 
-        require(helperAdmin[_helper] != address(0), "helper not exiest");
+        //require(helperAdmin[_helper] != address(0), "helper not exiest");
 
         helperAdmin[_helper] = _newAdmin;
 

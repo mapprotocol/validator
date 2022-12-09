@@ -92,14 +92,6 @@ contract ValidatorHelper is ReentrancyGuard {
         return IValidators(VALIDATORS_ADDRESS).revertRegisterValidator();
     }
 
-    function getActiveVotesForValidatorByAccount(
-        address validator,
-        address account
-    ) public view returns (uint256) {
-        IElection election = IElection(VALIDATORS_ADDRESS);
-        return election.getActiveVotesForValidatorByAccount(validator, account);
-    }
-
     function isPendingDeRegisterValidator() external view returns (bool) {
         return IValidators(VALIDATORS_ADDRESS).isPendingDeRegisterValidator();
     }
@@ -124,11 +116,10 @@ contract ValidatorHelper is ReentrancyGuard {
         return IElection(ELECTIONS_ADDRESS).activate(validator);
     }
 
-    function activateForAccount(address validator, address account)
-        external
-        onlyAdmin
-        returns (bool)
-    {
+    function activateForAccount(
+        address validator,
+        address account
+    ) external onlyAdmin returns (bool) {
         return
             IElection(ELECTIONS_ADDRESS).activateForAccount(validator, account);
     }
@@ -142,7 +133,7 @@ contract ValidatorHelper is ReentrancyGuard {
     ) external onlyAdmin returns (bool) {
         IElection election = IElection(ELECTIONS_ADDRESS);
         require(
-            election.revokeActive(validator, value, lesser, greater, index),
+            election.revokePending(validator, value, lesser, greater, index),
             "Failed to revoke Pending"
         );
         return true;
@@ -178,6 +169,57 @@ contract ValidatorHelper is ReentrancyGuard {
             );
     }
 
+    function getTotalVotesForValidator() public view returns (uint256) {
+        return
+            IElection(ELECTIONS_ADDRESS).getTotalVotesForValidator(
+                address(this)
+            );
+    }
+
+    function getTotalVotesForValidatorByAccount()
+        external
+        view
+        returns (uint256)
+    {
+        return
+            IElection(ELECTIONS_ADDRESS).getTotalVotesForValidatorByAccount(
+                address(this),
+                address(this)
+            );
+    }
+
+    function getPendingVotesForValidatorByAccount()
+        external
+        view
+        returns (uint256)
+    {
+        return
+            IElection(ELECTIONS_ADDRESS).getPendingVotesForValidatorByAccount(
+                address(this),
+                address(this)
+            );
+    }
+
+    function getActiveVotesForValidatorByAccount()
+        external
+        view
+        returns (uint256)
+    {
+        return
+            IElection(ELECTIONS_ADDRESS).getActiveVotesForValidatorByAccount(
+                address(this),
+                address(this)
+            );
+    }
+
+    function getTotalVotesForEligibleValidators()
+        external
+        view
+        returns (address[] memory, uint256[] memory)
+    {
+      return  IElection(ELECTIONS_ADDRESS).getTotalVotesForEligibleValidators();
+    }
+
     // <-------------------------------------- Accounts ----------------------------------------------->
 
     function setAccount(
@@ -198,11 +240,9 @@ contract ValidatorHelper is ReentrancyGuard {
         );
     }
 
-    function createAccount(string calldata name)
-        public
-        onlyAdmin
-        returns (bool)
-    {
+    function createAccount(
+        string calldata name
+    ) public onlyAdmin returns (bool) {
         IAccounts account = IAccounts(ACCOUNTS_ADDRESS);
         require(account.createAccount(), "Failed to create account");
         account.setName(name);
@@ -222,10 +262,9 @@ contract ValidatorHelper is ReentrancyGuard {
         IAccounts(ACCOUNTS_ADDRESS).setWalletAddress(walletAddress, v, r, s);
     }
 
-    function setAccountDataEncryptionKey(bytes memory dataEncryptionKey)
-        public
-        onlyAdmin
-    {
+    function setAccountDataEncryptionKey(
+        bytes memory dataEncryptionKey
+    ) public onlyAdmin {
         IAccounts(ACCOUNTS_ADDRESS).setAccountDataEncryptionKey(
             dataEncryptionKey
         );
@@ -310,24 +349,14 @@ contract ValidatorHelper is ReentrancyGuard {
             blsPop
         );
     }
-
-    function authorizeAttestationSigner(
-        address signer,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) public onlyAdmin {
-        IAccounts(ACCOUNTS_ADDRESS).authorizeAttestationSigner(signer, v, r, s);
-    }
-
     function authorizeSigner(address signer, bytes32 role) public onlyAdmin {
         IAccounts(ACCOUNTS_ADDRESS).authorizeSigner(signer, role);
     }
 
-    function completeSignerAuthorization(address account, bytes32 role)
-        public
-        onlyAdmin
-    {
+    function completeSignerAuthorization(
+        address account,
+        bytes32 role
+    ) public onlyAdmin {
         IAccounts(ACCOUNTS_ADDRESS).completeSignerAuthorization(account, role);
     }
 
@@ -341,10 +370,6 @@ contract ValidatorHelper is ReentrancyGuard {
 
     function removeVoteSigner() public onlyAdmin {
         IAccounts(ACCOUNTS_ADDRESS).removeVoteSigner();
-    }
-
-    function removeValidatorSigner() public onlyAdmin {
-        IAccounts(ACCOUNTS_ADDRESS).removeValidatorSigner();
     }
 
     function removeAttestationSigner() public onlyAdmin {
@@ -387,37 +412,29 @@ contract ValidatorHelper is ReentrancyGuard {
         return true;
     }
 
-    function getAccountTotalLockedGold(address account)
-        public
-        view
-        returns (uint256)
-    {
+    function getAccountTotalLockedGold(
+        address account
+    ) public view returns (uint256) {
         return
             ILockedGold(LOCKED_GOLDADDRESS).getAccountTotalLockedGold(account);
     }
 
-    function getAccountNonvotingLockedGold(address account)
-        public
-        view
-        returns (uint256)
-    {
+    function getAccountNonvotingLockedGold(
+        address account
+    ) public view returns (uint256) {
         ILockedGold locked = ILockedGold(LOCKED_GOLDADDRESS);
         return locked.getAccountNonvotingLockedGold(account);
     }
 
-    function getPendingWithdrawals(address account)
-        public
-        view
-        returns (uint256[] memory, uint256[] memory)
-    {
+    function getPendingWithdrawals(
+        address account
+    ) public view returns (uint256[] memory, uint256[] memory) {
         return ILockedGold(LOCKED_GOLDADDRESS).getPendingWithdrawals(account);
     }
 
-    function getTotalPendingWithdrawals(address account)
-        public
-        view
-        returns (uint256)
-    {
+    function getTotalPendingWithdrawals(
+        address account
+    ) public view returns (uint256) {
         return
             ILockedGold(LOCKED_GOLDADDRESS).getTotalPendingWithdrawals(account);
     }
@@ -428,7 +445,6 @@ contract ValidatorHelper is ReentrancyGuard {
         address payable reveiver,
         bool isSponsor
     ) public nonReentrant returns (bool) {
-       
         if (isSponsor) {
             require(manager.isAdmin(msg.sender), "deny");
             require(
@@ -448,7 +464,6 @@ contract ValidatorHelper is ReentrancyGuard {
                     value + sponsorAmount,
                 "too many"
             );
-
         }
 
         reveiver.transfer(value);
@@ -466,5 +481,9 @@ contract ValidatorHelper is ReentrancyGuard {
 
     function getBalance() public view returns (uint256) {
         return address(this).balance;
+    }
+
+    function getAdmin() public view returns (address) {
+        return manager.getHelperAdmin(address(this));
     }
 }
